@@ -1,0 +1,28 @@
+name: Notify Discord
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted]
+  push:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send notification to Discord
+        run: |
+          MSG="🔔 Event: ${{ github.event_name }} in repo ${{ github.repository }}"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            MSG="🚀 New Pull Request: ${{ github.event.pull_request.title }} by ${{ github.actor }} → ${{ github.event.pull_request.html_url }}"
+          elif [ "${{ github.event_name }}" = "pull_request_review" ]; then
+            MSG="📝 PR Review by ${{ github.actor }} → ${{ github.event.pull_request.html_url }}"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            MSG="📦 Push by ${{ github.actor }} to ${{ github.ref_name }} → ${{ github.event.compare }}"
+          fi
+
+          curl -H "Content-Type: application/json" \
+               -X POST \
+               -d "{\"content\": \"$MSG\"}" \
+               ${{ secrets.DISCORD_WEBHOOK }}
